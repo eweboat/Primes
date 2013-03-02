@@ -1,0 +1,1 @@
+find the nth left truncatable prime below 10^9
