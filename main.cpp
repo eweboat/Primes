@@ -33,60 +33,85 @@ bool IsPrime(int number)
 //2, 3, 5, 7, 13, 17, 23, 37, 43, 47, 53, 67, 73, 83, 97, 113, 137, 167, 173
 int main(int argc, char* argv[])
 {
+	// test data: 1, 3, 10, 100, 1000, 2166 (< 1000000000)
 	using std::chrono::high_resolution_clock;
 	high_resolution_clock::time_point startTime = high_resolution_clock::now();
 
 	// vector to hold primes
-	std::vector<int> orderLeftPrimes;
+	unsigned int targetIndex = 2166;
+	std::vector<int> orderedLeftPrimes;
+	std::vector<int> stordedLeftPrimes;
 
 	// read from file if present
 	std::ifstream is(data_file);
 	if (is.good())
 	{
 		std::istream_iterator<int> start(is), end;
-		orderLeftPrimes = std::vector<int>(start, end);
+		stordedLeftPrimes = std::vector<int>(start, end);
 	}
-	else
+
+	// if required value is contained within the pre-calculated set then copy across and return
+	if (stordedLeftPrimes.size() <= targetIndex)
 	{
-		orderLeftPrimes.reserve(OperationLimits::MaxQueryArg);
-		orderLeftPrimes.push_back(2);
-		orderLeftPrimes.push_back(3);
-		orderLeftPrimes.push_back(5);
-		orderLeftPrimes.push_back(7);
+		orderedLeftPrimes = stordedLeftPrimes;
+	}
+	// otherwise extend range beyond the pre-calculated
+	else if (orderedLeftPrimes.size() < targetIndex)
+	{
+		// start with known primes below 10 as seed set
+		orderedLeftPrimes.reserve(targetIndex);
+		orderedLeftPrimes.push_back(2);
+		orderedLeftPrimes.push_back(3);
+		orderedLeftPrimes.push_back(5);
+		orderedLeftPrimes.push_back(7);
 
 		std::vector<int> found;
-		std::vector<int> workingSet(orderLeftPrimes);
+		std::vector<int> workingSet(orderedLeftPrimes);
 
 		int base = 1;
-		int foo = 0;
-		int bar = 0;
-		for (int power10 = 1; power10 < 9; ++power10)
+		bool done = false;
+		for (int power10 = 1; done == false && power10 < OperationLimits::MaxPower10; ++power10)
 		{
 			base *= 10;
-			for(int i = 1; i < 10; ++i)
+			for(int leadingDigit = 1; done == false && leadingDigit < 10; ++leadingDigit)
 			{
-				int ibase = base * i;
 				for (auto x : workingSet) 
 				{
-					//std::cout << x + base << '\n';
-					foo = x + ibase;
-					bar = foo % 10;
-					if ((bar == 3 || bar == 7) && IsPrime(foo))
+					int testValue = (base * leadingDigit ) + x ;
+					int trailingDigit = testValue % 10;
+					// left truncatable primes must end it 3 or 7
+					unsigned int foo = found.size() + orderedLeftPrimes.size();
+					if (foo < stordedLeftPrimes.size() && stordedLeftPrimes.at(foo) == testValue)
 					{
-						found.push_back(x + ibase);
+						found.push_back(testValue);
+					}
+					else if ((trailingDigit == 3 || trailingDigit == 7) && IsPrime(testValue))
+					{
+						found.push_back(testValue);
+					}
+					// stop processing when have target number of primes
+					foo = found.size() + orderedLeftPrimes.size();
+					if (foo >= targetIndex)
+					{
+						done = true;
+						break;
 					}
 				}
 			}
-			orderLeftPrimes.insert(orderLeftPrimes.end(), found.begin(), found.end());
+
+			orderedLeftPrimes.insert(orderedLeftPrimes.end(), found.begin(), found.end());
 			workingSet = found;
 			found.clear();
-			std::cout << "WORKINGSET SIZE = " << workingSet.size() << "\n";
 		}
 
 		// write to file
-		std::ofstream output_file(data_file, std::ios::binary);
-		std::ostream_iterator<int> output_iterator(output_file, "\n");
-		std::copy(orderLeftPrimes.begin(), orderLeftPrimes.end(), output_iterator);
+		if (orderedLeftPrimes.size() > stordedLeftPrimes.size())
+		{
+			std::ofstream output_file(data_file, std::ios::binary);
+			std::ostream_iterator<int> output_iterator(output_file, "\n");
+			std::copy(orderedLeftPrimes.begin(), orderedLeftPrimes.end(), output_iterator);
+			output_file.close();
+		}
 	}
 
 	high_resolution_clock::time_point endTime = high_resolution_clock::now();
@@ -95,18 +120,19 @@ int main(int argc, char* argv[])
 	if (false)
 	{
 		int i = 1;
-		for (auto x = orderLeftPrimes.begin(); x != orderLeftPrimes.end(); ++x, ++i) {
+		for (auto x = orderedLeftPrimes.begin(); x != orderedLeftPrimes.end(); ++x, ++i) {
 			std::cout << i << ": " << *x << '\n';
 		}
 
 	}
 
-	int size = orderLeftPrimes.size();
-	if (size > 10) std::cout << "10: " << orderLeftPrimes[9] << " ref: 47\n";
-	if (size > 100) std::cout << "100: " << orderLeftPrimes[99] << " ref: 5167\n";
-	if (size > 1000) std::cout << "1000: " << orderLeftPrimes[999] << " ref: 8391283\n";
-	std::cout << orderLeftPrimes.size() << " Entries\n";
-	std::cout << "Last entry = " << orderLeftPrimes[orderLeftPrimes.size()-1] << "\n";
+	int size = orderedLeftPrimes.size();
+	std::cout << "result : the " << targetIndex << " left truncatable prime is: " << orderedLeftPrimes.at(targetIndex-1) << "\n";
+	if (size >= 10) std::cout << "10: " << orderedLeftPrimes[9] << " ref: 47\n";
+	if (size >= 100) std::cout << "100: " << orderedLeftPrimes[99] << " ref: 5167\n";
+	if (size >= 1000) std::cout << "1000: " << orderedLeftPrimes[999] << " ref: 8391283\n";
+	std::cout << orderedLeftPrimes.size() << " Entries\n";
+	std::cout << "Last entry = " << orderedLeftPrimes[orderedLeftPrimes.size()-1] << "\n";
 	std::cout << "It took me " << time_span.count() << " seconds.";
 
 	
