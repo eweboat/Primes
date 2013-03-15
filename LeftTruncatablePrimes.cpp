@@ -16,7 +16,7 @@ bool Primes::IsPrime(int number)
 	{
 		return number == 2 ? true : false;
 	}
-	for (int i=3; i*i<number; i += 2)
+	for (int i=3; i*i<=number; i += 2)
 	{
 		if (number % i == 0)
 		{
@@ -48,11 +48,11 @@ void Primes::FindLeftTruncatablePrimes(std::vector<unsigned int>& orderedLeftPri
 	// read from file if present
 	std::vector<unsigned int> stordedLeftPrimes;
 	std::ifstream inputFileStream(data_file);
-	if (inputFileStream.good())
-	{
-		std::istream_iterator<unsigned int> start(inputFileStream), end;
-		stordedLeftPrimes = std::vector<unsigned int>(start, end);
-	}
+	//if (inputFileStream.good())
+	//{
+	//	std::istream_iterator<unsigned int> start(inputFileStream), end;
+	//	stordedLeftPrimes = std::vector<unsigned int>(start, end);
+	//}
 
 	// if required value is contained within the pre-calculated set then copy across and return
 	if (stordedLeftPrimes.size() > targetIndex)
